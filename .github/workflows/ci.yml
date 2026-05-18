@@ -1,0 +1,97 @@
+name: CI
+
+on:
+  push:
+    branches: [main, fix/**]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Validate Manifests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate JSON syntax
+        run: |
+          for f in bucket/*.json; do
+            echo "Validating $f..."
+            python3 -m json.tool "$f" > /dev/null
+          done
+          echo "All manifests are valid JSON."
+
+      - name: Check required fields
+        run: |
+          for f in bucket/*.json; do
+            echo "Checking $f..."
+            for field in version description homepage license architecture bin; do
+              if ! python3 -c "import json,sys; d=json.load(open('$f')); assert '$field' in d" 2>/dev/null; then
+                echo "ERROR: Missing required field '$field' in $f"
+                exit 1
+              fi
+            done
+          done
+          echo "All required fields present."
+
+      - name: Validate URL structure
+        run: |
+          python3 -c "
+          import json, sys
+          from pathlib import Path
+          errors = []
+          for f in Path('bucket').glob('*.json'):
+              d = json.loads(f.read_text())
+              for arch in d.get('architecture', {}).values():
+                  url = arch.get('url', '')
+                  if 'github.com/VecTrade-io/vectrade-cli/releases' not in url:
+                      errors.append(f'{f}: URL does not point to VecTrade releases: {url}')
+                  if not url.endswith('.zip'):
+                      errors.append(f'{f}: URL must end with .zip: {url}')
+          if errors:
+              print('\n'.join(errors))
+              sys.exit(1)
+          print('All URLs valid.')
+          "
+
+  test:
+    name: Test Manifests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install test dependencies
+        run: pip install pytest
+
+      - name: Run validation tests
+        run: pytest tests/ -v --tb=short
+
+  scoop-check:
+    name: Scoop Checkver
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Scoop
+        shell: pwsh
+        run: |
+          Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+          if (!(Get-Command scoop -ErrorAction SilentlyContinue)) {
+            Invoke-RestMethod get.scoop.sh | Invoke-Expression
+          }
+
+      - name: Validate manifest with Scoop
+        shell: pwsh
+        run: |
+          # Add this repo as a bucket and check manifest is parseable
+          scoop bucket add vectrade $PWD
+          scoop info vectrade
