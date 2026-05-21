@@ -1,1 +1,11 @@
-* @VecTrade-io/sdk-maintainers
+# ─── CODEOWNERS ─────────────────────────────────────────────────────────────
+# Maps file patterns to owners/agents responsible for review.
+
+# ── Default ─────────────────────────────────────────────────────────────────
+*                           @mountek
+
+# ── Bucket manifest (vt-package-maintainer) ───────────────────────────────
+bucket/                     @mountek
+
+# ── CI ─────────────────────────────────────────────────────────────────────
+.github/workflows/          @mountek
