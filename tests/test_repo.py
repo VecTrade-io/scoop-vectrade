@@ -190,7 +190,7 @@ class TestCIWorkflow:
         assert "contents: read" in ci_content
 
     def test_uses_checkout_v4(self, ci_content):
-        assert "actions/checkout@v4" in ci_content
+        assert "actions/checkout@v6" in ci_content
 
     def test_validates_json(self, ci_content):
         assert "json" in ci_content.lower()
