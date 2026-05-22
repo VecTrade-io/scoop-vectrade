@@ -95,3 +95,30 @@ jobs:
           # Add this repo as a bucket and check manifest is parseable
           scoop bucket add vectrade $PWD
           scoop info vectrade
+
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for hardcoded secrets
+        run: |
+          if grep -rn 'vq_live_[a-zA-Z0-9]\{10,\}' --include="*.json" .; then
+            echo "ERROR: Found hardcoded live API keys!"
+            exit 1
+          fi
+          echo "No hardcoded secrets found"
+
+      - name: Verify download URLs point to official releases
+        run: |
+          python3 -c "
+          import json
+          from pathlib import Path
+          for f in Path('bucket').glob('*.json'):
+              d = json.loads(f.read_text())
+              for arch in d.get('architecture', {}).values():
+                  url = arch.get('url', '')
+                  assert 'github.com/VecTrade-io' in url, f'Untrusted URL in {f}: {url}'
+          print('All URLs point to official VecTrade releases.')
+          "

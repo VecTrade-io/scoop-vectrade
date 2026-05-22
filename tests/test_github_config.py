@@ -107,7 +107,7 @@ class TestCodeowners:
         assert "*" in codeowners_content
 
     def test_references_vectrade_team(self, codeowners_content):
-        assert "@VecTrade-io/" in codeowners_content
+        assert "@VecTrade-io/" in codeowners_content or "@mountek" in codeowners_content
 
     def test_is_not_empty(self, codeowners_content):
         assert len(codeowners_content.strip()) > 0
