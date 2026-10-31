@@ -112,6 +112,10 @@ class TestArchitecture:
     def test_arm64_has_hash(self, manifest):
         assert "hash" in manifest["architecture"]["arm64"]
 
+    @pytest.mark.parametrize("arch", ["64bit", "arm64"])
+    def test_hash_is_sha256(self, manifest, arch):
+        assert re.fullmatch(r"[0-9a-f]{64}", manifest["architecture"][arch]["hash"])
+
 
 class TestURLs:
     """Verify download URLs are correct."""

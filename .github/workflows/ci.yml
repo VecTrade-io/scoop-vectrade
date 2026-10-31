@@ -84,17 +84,17 @@ jobs:
       - name: Install Scoop
         shell: pwsh
         run: |
-          Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
-          if (!(Get-Command scoop -ErrorAction SilentlyContinue)) {
-            Invoke-RestMethod get.scoop.sh | Invoke-Expression
-          }
+          # Hosted runners are elevated; the installer refuses admin unless told otherwise.
+          Invoke-Expression "& {$(Invoke-RestMethod https://get.scoop.sh)} -RunAsAdmin"
+          Join-Path $env:USERPROFILE 'scoop\shims' | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
-      - name: Validate manifest with Scoop
+      - name: Install from manifest and run
         shell: pwsh
         run: |
-          # Add this repo as a bucket and check manifest is parseable
-          scoop bucket add vectrade $PWD
-          scoop info vectrade
+          # Installing downloads the release zip and verifies its hash, so a stale manifest fails here.
+          scoop install .\bucket\vectrade.json
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          vectrade version
 
   security:
     name: Security Scan
