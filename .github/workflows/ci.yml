@@ -88,13 +88,13 @@ jobs:
           Invoke-Expression "& {$(Invoke-RestMethod https://get.scoop.sh)} -RunAsAdmin"
           Join-Path $env:USERPROFILE 'scoop\shims' | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
-      - name: Validate manifest with Scoop
+      - name: Install from manifest and run
         shell: pwsh
         run: |
-          scoop bucket add vectrade "$PWD"
-          scoop cat vectrade/vectrade
-          scoop info vectrade/vectrade
+          # Installing downloads the release zip and verifies its hash, so a stale manifest fails here.
+          scoop install .\bucket\vectrade.json
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          vectrade version
 
   security:
     name: Security Scan
